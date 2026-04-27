@@ -172,7 +172,7 @@ class SnakeGame:
             h = self.snake[0]
             new_h = (h[0]+self.dir[0], h[1]+self.dir[1])
             if (new_h[0]<0 or new_h[0]>=GRID_WIDTH or new_h[1]<0 or new_h[1]>=GRID_HEIGHT or new_h in self.snake or new_h in self.obs):
-                self.state = "GAMEOVER"; break
+                self.state = "Game Over!"; break
 
             self.snake.insert(0, new_h)
             if self.food.active and new_h == self.food.pos:
@@ -183,7 +183,7 @@ class SnakeGame:
             if not self.food.active and random.random() < 5: self.food.spawn(self.snake + self.obs)
             self.food.update()
 
-            # Render
+            #Рендер
             screen.fill(BLACK)
             if self.settings['grid_overlay']:
                 for x in range(0, SCREEN_WIDTH, GRID_SIZE): pygame.draw.line(screen, (30,30,30), (x, UI_HEIGHT), (x, SCREEN_HEIGHT))

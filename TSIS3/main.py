@@ -67,20 +67,29 @@ class Enemy(pygame.sprite.Sprite):
 class Collectible(pygame.sprite.Sprite):
     def __init__(self, c_type):
         super().__init__()
-        self.type = c_type 
+        self.type = c_type # "coin1", "coin2", "nitro", "shield", "repair"
         
-        if c_type == "coin":
+        # Логика выбора картинки
+        if self.type == "coin1":
             try:
                 self.image = pygame.image.load("coin_orig.png").convert_alpha()
-            
-                self.image = pygame.transform.scale(self.image, (40, 40))
+                self.image = pygame.transform.scale(self.image, (30, 30))
             except:
-                print("Файл my_coin.png не найден, использую стандартный квадрат.")
-                self.image = pygame.Surface((30, 30))
-                self.image.fill(GOLD)
-        elif c_type == "nitro": self.image = pygame.Surface((30, 30)); self.image.fill(CYAN)
-        elif c_type == "shield": self.image = pygame.Surface((30, 30)); self.image.fill(PURPLE)
-        elif c_type == "repair": self.image = pygame.Surface((30, 30)); self.image.fill(GREEN)
+                self.image = pygame.Surface((25, 25)); self.image.fill(GOLD)
+        
+        elif self.type == "coin2":
+            try:
+                self.image = pygame.image.load("coin2.png").convert_alpha()
+                self.image = pygame.transform.scale(self.image, (40, 40)) # Вторая монета чуть больше
+            except:
+                self.image = pygame.Surface((35, 35)); self.image.fill((255, 100, 0)) # Оранжевая если нет фото
+        
+        elif self.type == "nitro": 
+            self.image = pygame.Surface((30, 30)); self.image.fill(CYAN)
+        elif self.type == "shield": 
+            self.image = pygame.Surface((30, 30)); self.image.fill(PURPLE)
+        elif self.type == "repair": 
+            self.image = pygame.Surface((30, 30)); self.image.fill(GREEN)
         
         self.rect = self.image.get_rect(center=(random.randint(30, WIDTH-30), -50))
 
@@ -179,7 +188,6 @@ class RacingApp:
 
     def game_run(self):
         # 1. Инициализация игрока и групп
-        # Проверяем, чтобы ключ в settings совпадал с тем, что мы создали (difficulty)
         diff_key = 'difficulty' if 'difficulty' in self.settings else 'diff'
         
         player = Player(self.settings['snake_color'])
@@ -198,15 +206,17 @@ class RacingApp:
                 pygame.mixer.music.play(-1)
             except: pass
 
-        # 2. Настройка таймеров (проверь эти ID!)
+        # 2. Настройка таймеров
         pygame.time.set_timer(USEREVENT+1, 1000) # Враги
-        pygame.time.set_timer(USEREVENT+2, 1200) # МОНЕТЫ (обязательно +2)
+        pygame.time.set_timer(USEREVENT+2, 1200) # МОНЕТЫ
         pygame.time.set_timer(USEREVENT+3, 6000) # Бонусы
 
         while self.state == "GAME":
             now = pygame.time.get_ticks()
             DISPLAYSURF.blit(self.bg, (0,0))
-            distance += game_speed / 10
+            
+            # Увеличение дистанции
+            distance += game_speed / 15
 
             for event in pygame.event.get():
                 if event.type == QUIT: pygame.quit(); sys.exit()
@@ -217,11 +227,12 @@ class RacingApp:
                     enemies.add(e)
                     all_sprites.add(e)
                 
-                # Спавн МОНЕТ (проверь, что этот блок есть!)
+                # Спавн МОНЕТ (Алгоритм: 20% шанс на редкую монету)
                 if event.type == USEREVENT+2:
-                    c = Collectible("coin")
+                    chosen_type = "coin2" if random.random() < 0.2 else "coin1"
+                    c = Collectible(chosen_type)
                     coins.add(c)
-                    all_sprites.add(c) # Добавляем в общую группу для отрисовки
+                    all_sprites.add(c)
                 
                 # Спавн Бонусов
                 if event.type == USEREVENT+3:
@@ -229,21 +240,26 @@ class RacingApp:
                     powerups.add(p)
                     all_sprites.add(p)
 
+            # 3. Логика движения
             if active_p == "nitro" and now > p_timer: active_p = None
             player.move(active_p == "nitro")
             
             enemies.update()
-            coins.update(game_speed)      # Двигаем монеты
-            powerups.update(game_speed)   # Двигаем бонусы
+            coins.update(game_speed)
+            powerups.update(game_speed)
 
             # 4. Обработка столкновений с монетами
-            # True — удаляет монету при касании
             coin_hits = pygame.sprite.spritecollide(player, coins, True)
             for hit in coin_hits:
+                # Начисление очков в зависимости от типа монеты
+                if hit.type == "coin1":
+                    score += 1
+                elif hit.type == "coin2":
+                    score += 3
+                
                 coin_count += 1
-                score += 10
                 if coin_count % 5 == 0: 
-                    game_speed += 1 # Ускоряем игру каждые 5 монет
+                    game_speed += 1 
 
             # 5. Обработка бонусов
             for p in pygame.sprite.spritecollide(player, powerups, True):
@@ -266,13 +282,21 @@ class RacingApp:
                     save_json(SCORES_FILE, self.leaderboard)
                     self.state = "MENU"
 
-            # 7. ОТРИСОВКА (Важно, чтобы монеты были в all_sprites)
+            # 7. ОТРИСОВКА
             for s in all_sprites: 
                 DISPLAYSURF.blit(s.image, s.rect)
             
-            # Интерфейс
+            # --- ИНТЕРФЕЙС ---
+            # Score в левом верхнем углу
             DISPLAYSURF.blit(font_small.render(f"Score: {score}", True, BLACK), (10, 10))
-            DISPLAYSURF.blit(font_small.render(f"Coins: {coin_count}", True, BLACK), (10, 35))
+            DISPLAYSURF.blit(font_small.render(f"Total Coins: {coin_count}", True, BLACK), (10, 35))
+            
+            # Distance в ПРАВОМ верхнем углу
+            dist_txt = font_small.render(f"Distance: {int(distance)}m", True, BLACK)
+            DISPLAYSURF.blit(dist_txt, (WIDTH - dist_txt.get_width() - 10, 10))
+            
+            if active_p:
+                DISPLAYSURF.blit(font_small.render(f"MOD: {active_p.upper()}", True, RED), (WIDTH//2 - 40, 10))
             
             pygame.display.update()
             FramePerSec.tick(FPS)

@@ -179,7 +179,7 @@ def interactive_pagination():
                 print("Здесь больше нет записей")
             else:
                 for r in rows:
-                    print(f"ID: {r[0]} | 👤 {r[1]} | 📧 {r[2]}")
+                    print(f"ID: {r[0]} |{r[1]} | {r[2]}")
 
             print("\n[n] - Next (Вперед) | [p] - Prev (Назад) | [q] - Quit (Выход в меню)")
             cmd = input("Введите команду: ").lower().strip()
