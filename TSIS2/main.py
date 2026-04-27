@@ -2,7 +2,6 @@ import pygame, random, sys, psycopg2, json, os, math
 from datetime import datetime
 from collections import deque
 
-# --- НАСТРОЙКИ ---
 SETTINGS_FILE = 'settings.json'
 DEFAULT_SETTINGS = {"snake_color": [0, 255, 0], "grid_overlay": True, "sound": True}
 

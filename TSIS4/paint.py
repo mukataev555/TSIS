@@ -10,9 +10,8 @@ timer = pygame.time.Clock()
 WIDTH = 1000 
 HEIGHT = 600
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
-pygame.display.set_caption('Pro Paint by Mukataev Alibek07')
+pygame.display.set_caption('Paint by Mukataev Alibek07')
 
-# ХОЛСТ — здесь всё сохраняется навечно
 base_canvas = pygame.Surface((WIDTH, HEIGHT))
 base_canvas.fill('white')
 
@@ -32,9 +31,7 @@ def flood_fill(surf, x, y, new_color):
     if target_color == new_color: return
 
     queue = deque([(x, y)])
-    # Используем PixelArray для скорости
     pixels = pygame.PixelArray(surf)
-    # Нужно преобразовать цвет в формат понятный для PixelArray
     new_color_mapped = surf.map_rgb(new_color)
     target_color_mapped = surf.map_rgb(target_color)
 
@@ -126,6 +123,15 @@ while run:
         if event.type == pygame.QUIT: 
             run = False
         
+        if event.type == pygame.KEYDOWN:
+            #Для сохранения при нажатии Ctrl + S
+            if event.key == pygame.K_s and (event.mod & pygame.KMOD_CTRL):
+                # Сохраняем холст
+                import datetime
+                filename = f"painting_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                pygame.image.save(base_canvas, filename)
+                print(f"Рисунок сохранен как {filename}")
+        
         if event.type == MOUSEBUTTONDOWN:
             if event.pos[1] < 70: # Клик по меню
                 for i, b in enumerate(t_b):
@@ -144,7 +150,6 @@ while run:
         
         if event.type == MOUSEBUTTONUP:
             if drawing:
-                # Когда отпускаем мышь, рисуем ФИНАЛЬНУЮ фигуру на холсте
                 if active_shape not in [5, 6, 7]:
                     r = pygame.Rect(start_pos, (event.pos[0]-start_pos[0], event.pos[1]-start_pos[1]))
                     r.normalize()
